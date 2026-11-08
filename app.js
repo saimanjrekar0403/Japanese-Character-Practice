@@ -18,7 +18,6 @@ function icon(name) {
 document.getElementById('homeBtn').innerHTML = icon('home');
 settingsBtn.innerHTML = icon('sliders');
 
-
 /* ---------- THEME (auto / light / dark) ---------- */
 
 let redrawHook = null;  // the practice screen sets this so the ink recolours when the theme changes
@@ -30,9 +29,35 @@ function applyTheme() {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   if (redrawHook) redrawHook();
 }
-// if your phone switches between light/dark while the app is open, follow it (in auto mode)
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 applyTheme();
+
+/* ---------- PROGRESS (saved on this phone, resets at 3 AM IST) ---------- */
+
+const RESET_HOUR = 3;   // change this later if you want a different reset time
+
+function dayKey() {
+  // IST is UTC+5:30. Shift the clock so "midnight" lands at RESET_HOUR.
+  const shifted = new Date(Date.now() + 5.5 * 3600e3 - RESET_HOUR * 3600e3);
+  return shifted.toISOString().slice(0, 10);   // e.g. "2026-11-08"
+}
+
+function loadProgress() {
+  try {
+    const p = JSON.parse(localStorage.getItem('progress'));
+    if (p && p.day === dayKey() && p.done) return p;
+  } catch (e) {}
+  return { day: dayKey(), done: {} };   // new day (or nothing saved yet): start fresh
+}
+
+function saveProgress(p) {
+  try { localStorage.setItem('progress', JSON.stringify(p)); } catch (e) {}
+}
+
+// keep saved drawings small: 3 decimals is plenty
+function roundStrokes(strokes) {
+  return strokes.map(s => s.map(([x, y]) => [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000]));
+}
 
 /* ---------- HELPERS ---------- */
 
@@ -41,7 +66,6 @@ async function loadJSON(path) {
   return res.json();
 }
 
-// set the header title, and show the ⚙️ button only when asked
 function setHeader(text, showGear) {
   title.textContent = text;
   settingsBtn.style.display = showGear ? '' : 'none';
@@ -54,15 +78,20 @@ async function showHome() {
   setHeader('Hiragana', true);
   app.innerHTML = '';
 
+  const progress = loadProgress();
   const ids = await loadJSON('data/hiragana/index.json');
   const grid = document.createElement('div');
   grid.className = 'grid';
 
   for (const id of ids) {
     const series = await loadJSON(`data/hiragana/${id}.json`);
+    const total = series.chars.length;
+    const count = series.chars.filter(c => progress.done[c.romaji]).length;
+
     const btn = document.createElement('button');
-    btn.className = 'series-btn';
-    btn.textContent = series.chars[0].kana;
+    // green = all done, red = nothing done, yellow = some done
+    btn.className = 'series-btn ' + (count === total ? 'done' : count === 0 ? 'todo' : 'partial');
+    btn.innerHTML = `${series.chars[0].kana}<span class="count">${count}/${total}</span>`;
     btn.onclick = () => { location.hash = `#/practice/${id}`; };
     grid.appendChild(btn);
   }
@@ -93,7 +122,7 @@ function showSettings() {
 
   buttons.forEach(b => {
     b.onclick = () => {
-      localStorage.setItem('theme', b.dataset.themeChoice);  // saved on this phone
+      localStorage.setItem('theme', b.dataset.themeChoice);
       applyTheme();
       markSelected();
     };
@@ -133,17 +162,24 @@ function setupPractice(chars) {
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const promptEl = document.getElementById('prompt');
+  const col = document.querySelector('.canvas-col');
 
-  const done = chars.map(() => null);  // done[i] = the strokes you drew for box i (null = not done yet)
-  let strokes = [];                    // strokes on the big canvas right now
+  // load what you already did today (null = not done yet)
+  const saved = loadProgress().done;
+  const done = chars.map(c => saved[c.romaji] || null);
+
+  let strokes = [];   // strokes on the big canvas right now
   let current = null;
-  let target = 0;                      // which box you're writing now (-1 = everything is done)
+  let target = done.findIndex(d => d === null);   // which box you're writing (-1 = everything is done)
 
-  // Make the canvas sharp on phone screens
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = canvas.clientWidth * dpr;
-  canvas.height = canvas.clientHeight * dpr;
-  ctx.scale(dpr, dpr);
+  // Size the canvas for sharp lines. Called every time the canvas becomes visible,
+  // because a hidden canvas has size 0.
+  function sizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
 
   function redraw() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -185,20 +221,25 @@ function setupPractice(chars) {
     audio.play().catch(() => {});
   }
 
-  // Update the prompt + highlighted box, then play the sound
+  // Update the prompt, the highlighted box, and show/hide the canvas
   function showTarget() {
     chars.forEach((_, i) =>
       document.getElementById(`slot${i}`).classList.toggle('active', i === target));
+
     if (target === -1) {
-      promptEl.textContent = 'Series complete! 🎉';
+      col.classList.add('finished');            // hides canvas + buttons
+      promptEl.textContent = 'Series complete! 🎉 Tap a box to redo it';
     } else {
+      col.classList.remove('finished');
+      sizeCanvas();
+      redraw();
       promptEl.textContent = `Write: ${chars[target].romaji}`;
       playSound();
     }
   }
 
   canvas.addEventListener('pointerdown', e => {
-    if (target === -1) return;                 // all done: tap a box to redo one
+    if (target === -1) return;
     canvas.setPointerCapture(e.pointerId);
     current = [point(e)];
     strokes.push(current);
@@ -220,7 +261,6 @@ function setupPractice(chars) {
       if (done[i] === null && i !== firstEmpty()) return;     // can't skip ahead
       target = i;
       strokes = [];
-      redraw();
       showTarget();
     };
   });
@@ -231,21 +271,28 @@ function setupPractice(chars) {
 
   document.getElementById('doneBtn').onclick = () => {
     if (target === -1 || strokes.length === 0) return;
-    done[target] = strokes;       // remember it
-    drawSlot(target, strokes);    // your drawing goes into the box (replacing the old one if redoing)
+    const rounded = roundStrokes(strokes);
+    done[target] = rounded;
+    drawSlot(target, rounded);
+
+    const p = loadProgress();                   // save it (also handles the day changing mid-session)
+    p.done[chars[target].romaji] = rounded;
+    saveProgress(p);
+
     strokes = [];
-    redraw();
-    target = firstEmpty();        // jump to the first box still empty (or -1 if all done)
+    target = firstEmpty();                      // next empty box, or -1 if everything is done
     showTarget();
   };
 
+  // show your saved drawings in the boxes, then start
+  done.forEach((s, i) => { if (s) drawSlot(i, s); });
   showTarget();
 }
 
 /* ---------- ROUTER ---------- */
 
 function route() {
-  const parts = location.hash.split('/');   // "#/practice/ha" -> ["#", "practice", "ha"]
+  const parts = location.hash.split('/');
   if (parts[1] === 'practice') showPractice(parts[2]);
   else if (parts[1] === 'settings') showSettings();
   else showHome();
