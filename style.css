@@ -189,3 +189,44 @@ h1 { margin: 0; font-size: 20px; }
   .practice:has(.finished) .slots { flex-direction: row; }
   .practice:has(.finished) .canvas-col { order: -1; }   /* message goes above the boxes */
 }
+
+.left-col { display: flex; flex-direction: column; gap: 12px; }
+.shot-open { font-size: 14px; padding: 8px 10px; margin: 0; align-self: flex-start; }
+
+/* screenshot view */
+.shot {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: var(--bg);
+  color: var(--ink);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 56px 16px 24px;
+}
+.shot-close {
+  position: fixed;
+  top: 10px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+.shot-close .icon { width: 28px; height: 28px; }
+.shot-time { font-size: 18px; text-align: center; }
+.shot-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; max-width: 620px; }
+.shot-box { width: 96px; height: 96px; box-sizing: border-box; border: 2px solid var(--ink); border-radius: 8px; }
+.shot-box svg { width: 100%; height: 100%; }
+.shot-box polyline {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+@media (min-width: 701px) { .shot-box { width: 112px; height: 112px; } }

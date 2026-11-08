@@ -9,7 +9,9 @@ const ICONS = {
   sound:   '<path d="M3 9H8L13 4V20L8 15H3Z"/><path d="M17 9V15M20.5 6V18"/>',
   undo:    '<path d="M9 4L4 9L9 14M4 9H16V20H11"/>',
   trash:   '<path d="M4 6H20M9 6V3H15V6M6 6V21H18V6M10 10V17M14 10V17"/>',
-  check:   '<path d="M4 12L10 18L20 6"/>'
+  check:   '<path d="M4 12L10 18L20 6"/>',
+  camera:  '<path d="M3 8H7L9 5H15L17 8H21V19H3Z"/><rect x="9" y="10" width="6" height="6"/>',
+  close:   '<path d="M5 5L19 19M19 5L5 19"/>'
 };
 function icon(name) {
   return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -71,11 +73,28 @@ function setHeader(text, showGear) {
   settingsBtn.style.display = showGear ? '' : 'none';
 }
 
+// strokes -> the SVG lines used in the small boxes and the screenshot view
+function strokesToPolylines(strokeList) {
+  return strokeList.map(s => {
+    const pts = s.length === 1 ? [s[0], s[0]] : s;   // a single tap becomes a dot
+    return `<polyline points="${pts.map(p => p.join(',')).join(' ')}" />`;
+  }).join('');
+}
+
+// current date + time in IST, e.g. "8 Nov 2026, 10:42:15 pm"
+function nowIST() {
+  return new Date().toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+  });
+}
+
 /* ---------- HOME SCREEN ---------- */
 
 async function showHome() {
   redrawHook = null;
-  setHeader('Hiragana', true);
+  setHeader('ひらがな', true);
   app.innerHTML = '';
 
   const progress = loadProgress();
@@ -133,14 +152,17 @@ function showSettings() {
 /* ---------- PRACTICE SCREEN ---------- */
 
 async function showPractice(id) {
-  setHeader(`${id} series`, false);
   const series = await loadJSON(`data/hiragana/${id}.json`);
   const chars = series.chars;
+  setHeader(`${chars[0].kana}行`, false);   // e.g. あ行, か行, は行
 
   app.innerHTML = `
     <div class="practice">
-      <div class="slots">
-        ${chars.map((c, i) => `<div class="slot" id="slot${i}"><svg viewBox="0 0 1 1"></svg></div>`).join('')}
+      <div class="left-col">
+        <div class="slots">
+          ${chars.map((c, i) => `<div class="slot" id="slot${i}"><svg viewBox="0 0 1 1"></svg></div>`).join('')}
+        </div>
+        <button class="tool-btn shot-open" id="shotBtn">${icon('camera')} Screenshot</button>
       </div>
       <div class="canvas-col">
         <div class="topbar">
@@ -201,13 +223,9 @@ function setupPractice(chars) {
     return [e.offsetX / canvas.clientWidth, e.offsetY / canvas.clientHeight];
   }
 
-  // Shrink a drawing into one of the small boxes (as an SVG)
+  // Shrink a drawing into one of the small boxes
   function drawSlot(i, strokeList) {
-    const svg = document.querySelector(`#slot${i} svg`);
-    svg.innerHTML = strokeList.map(s => {
-      const pts = s.length === 1 ? [s[0], s[0]] : s;   // a single tap becomes a dot
-      return `<polyline points="${pts.map(p => p.join(',')).join(' ')}" />`;
-    }).join('');
+    document.querySelector(`#slot${i} svg`).innerHTML = strokesToPolylines(strokeList);
   }
 
   // the first box that's still empty (-1 if all are done)
@@ -217,11 +235,11 @@ function setupPractice(chars) {
 
   function playSound() {
     if (target === -1) return;
-    const audio = new Audio(`audio/${chars[target].romaji}.mp3`);
+    const audio = new Audio(`audio/${chars[target].romaji}.mp3`);   // file name only, never shown
     audio.play().catch(() => {});
   }
 
-  // Update the prompt, the highlighted box, and show/hide the canvas
+  // Update the highlighted box and show/hide the canvas
   function showTarget() {
     chars.forEach((_, i) =>
       document.getElementById(`slot${i}`).classList.toggle('active', i === target));
@@ -233,9 +251,32 @@ function setupPractice(chars) {
       col.classList.remove('finished');
       sizeCanvas();
       redraw();
-      promptEl.textContent = `Write: ${chars[target].romaji}`;
+      promptEl.textContent = '';                // no hint text on purpose
       playSound();
     }
+  }
+
+  // Full-screen page with all your drawings + live date/time, made for screenshots
+  function openShot() {
+    const box = document.createElement('div');
+    box.className = 'shot';
+    box.innerHTML = `
+      <button class="shot-close" aria-label="Close">${icon('close')}</button>
+      <div class="shot-time"></div>
+      <div class="shot-grid">
+        ${done.map(s => `<div class="shot-box"><svg viewBox="0 0 1 1">${s ? strokesToPolylines(s) : ''}</svg></div>`).join('')}
+      </div>`;
+    app.appendChild(box);
+
+    const timeEl = box.querySelector('.shot-time');
+    const tick = () => { timeEl.textContent = `${nowIST()} IST`; };
+    tick();
+    const timer = setInterval(() => {
+      if (!box.isConnected) clearInterval(timer);   // screen was left: stop the clock
+      else tick();
+    }, 1000);
+
+    box.querySelector('.shot-close').onclick = () => { clearInterval(timer); box.remove(); };
   }
 
   canvas.addEventListener('pointerdown', e => {
@@ -268,6 +309,7 @@ function setupPractice(chars) {
   document.getElementById('undoBtn').onclick = () => { strokes.pop(); redraw(); };
   document.getElementById('clearBtn').onclick = () => { strokes = []; redraw(); };
   document.getElementById('soundBtn').onclick = playSound;
+  document.getElementById('shotBtn').onclick = openShot;
 
   document.getElementById('doneBtn').onclick = () => {
     if (target === -1 || strokes.length === 0) return;
