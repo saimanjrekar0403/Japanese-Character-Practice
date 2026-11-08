@@ -33,3 +33,41 @@ h1 { margin: 0; font-size: 20px; }
   color: var(--ink);
   cursor: pointer;
 }
+.pad-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.pad {
+  position: relative;
+  width: min(90vw, 420px);
+  aspect-ratio: 1 / 1;
+  border: 2px solid var(--ink);
+}
+
+/* the dashed cross (pointer-events: none so they don't block your finger) */
+.pad::before, .pad::after { content: ""; position: absolute; pointer-events: none; }
+.pad::before { left: 50%; top: 0; bottom: 0; border-left: 2px dashed #999; }
+.pad::after  { top: 50%; left: 0; right: 0; border-top: 2px dashed #999; }
+
+.pad canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none; /* stops the page from scrolling while you draw */
+}
+
+.tool-btn {
+  font-size: 18px;
+  padding: 10px 16px;
+  margin: 0 6px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
