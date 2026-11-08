@@ -71,3 +71,98 @@ h1 { margin: 0; font-size: 20px; }
   color: var(--ink);
   cursor: pointer;
 }
+
+.practice {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12px;
+}
+
+.slots { display: flex; flex-direction: column; gap: 12px; }
+
+.slot {
+  width: 110px;
+  height: 110px;
+  box-sizing: border-box;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+}
+.slot.active { border-color: #3b82f6; box-shadow: 0 0 0 3px #3b82f655; }
+.slot svg { width: 100%; height: 100%; }
+.slot polyline {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.canvas-col { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+.topbar {
+  width: min(90vw, 420px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+}
+
+.sound-btn { font-size: 28px; background: none; border: none; cursor: pointer; }
+
+/* PC: sound button in the top right corner of the screen */
+@media (min-width: 701px) {
+  .sound-btn { position: fixed; top: 10px; right: 16px; }
+}
+
+/* Phone: canvas first, boxes below it, sound button above the canvas on the right */
+@media (max-width: 700px) {
+  .practice { flex-direction: column; align-items: center; gap: 16px; }
+  .canvas-col { order: -1; }
+  .slots { flex-direction: row; gap: 8px; width: min(90vw, 420px); }
+  .slot { flex: 1; width: auto; height: auto; aspect-ratio: 1 / 1; }
+}
+
+[data-theme="dark"] { --bg: #1e2128; --ink: #eceff4; color-scheme: dark; }
+
+#settingsBtn {
+  margin-left: auto;   /* pushes it to the right edge */
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.slot { cursor: pointer; }
+
+.settings { padding: 12px; max-width: 420px; margin: 0 auto; }
+.theme-options { display: flex; gap: 10px; flex-wrap: wrap; }
+.theme-btn {
+  font-size: 18px;
+  padding: 10px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+.theme-btn.selected { background: var(--ink); color: var(--bg); }
+.hint { opacity: 0.7; }
+
+.icon {
+  width: 1.2em;
+  height: 1.2em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: square;   /* square ends + sharp corners = the blocky look */
+  stroke-linejoin: miter;
+  vertical-align: -0.2em;
+}
+
+#homeBtn, #settingsBtn, .sound-btn { color: var(--ink); display: flex; align-items: center; }
+#homeBtn .icon, #settingsBtn .icon { width: 28px; height: 28px; }
+.sound-btn .icon { width: 32px; height: 32px; }
+.tool-btn { display: inline-flex; align-items: center; gap: 8px; }
