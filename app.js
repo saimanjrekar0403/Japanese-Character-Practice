@@ -187,6 +187,75 @@ function nowIST() {
   });
 }
 
+/* ---------- FULL CHART (all series together, for screenshots) ---------- */
+
+// Which of the 5 columns (a i u e o) each character sits in. Default: all 5 columns.
+// Each inner list is one row of the chart, filled with the series' characters in order.
+const CHART_LAYOUT = {
+  ya: [[0, 2, 4]],      // や _ ゆ _ よ
+  wa: [[0, 4], [0]]     // わ _ _ _ を, then ん on its own row
+};
+
+async function openChart() {
+  const ids = await loadJSON('data/hiragana/index.json');
+  const allSeries = await Promise.all(ids.map(id => loadJSON(`data/hiragana/${id}.json`)));
+  const done = loadProgress().done;
+  let mode = 'writing';   // 'writing' = your drawings, 'printed' = typed characters
+
+  // one entry per box: the character, or null for an empty spot in the chart
+  const cells = [];
+  allSeries.forEach((series, i) => {
+    const layout = CHART_LAYOUT[ids[i]] || [[0, 1, 2, 3, 4]];
+    let used = 0;   // how many characters of this series are already placed
+    for (const row of layout) {
+      for (let col = 0; col < 5; col++) {
+        const at = row.indexOf(col);
+        cells.push(at === -1 ? null : series.chars[used + at]);
+      }
+      used += row.length;
+    }
+  });
+
+  const box = document.createElement('div');
+  box.className = 'shot';   // same full-screen page as the single-series screenshot view
+  box.innerHTML = `
+    <button class="shot-close" aria-label="Close">${icon('close')}</button>
+    <div class="shot-time"></div>
+    <div class="theme-options">
+      <button class="theme-btn" data-mode="writing">My writing</button>
+      <button class="theme-btn" data-mode="printed">Printed</button>
+    </div>
+    <div class="chart"></div>`;
+  app.appendChild(box);
+
+  const chart = box.querySelector('.chart');
+  const modeBtns = box.querySelectorAll('[data-mode]');
+
+  function draw() {
+    chart.innerHTML = cells.map(c => {
+      if (!c) return '<div class="chart-cell gap"></div>';
+      if (mode === 'printed') return `<div class="chart-cell"><span class="kana">${c.kana}</span></div>`;
+      const s = done[c.romaji];
+      return `<div class="chart-cell"><svg viewBox="0 0 1 1">${s ? strokesToPolylines(s) : ''}</svg></div>`;
+    }).join('');
+    modeBtns.forEach(b => b.classList.toggle('selected', b.dataset.mode === mode));
+  }
+  modeBtns.forEach(b => { b.onclick = () => { mode = b.dataset.mode; draw(); }; });
+  draw();
+
+  // live date + time
+  const timeEl = box.querySelector('.shot-time');
+  const tick = () => { timeEl.textContent = `${nowIST()} IST`; };
+  tick();
+  const timer = setInterval(() => {
+    if (!box.isConnected) clearInterval(timer);   // screen was left: stop the clock
+    else tick();
+  }, 1000);
+
+  box.querySelector('.shot-close').onclick = () => { clearInterval(timer); box.remove(); };
+}
+
+
 /* ---------- HOME SCREEN ---------- */
 
 async function showHome() {
@@ -212,6 +281,11 @@ async function showHome() {
     grid.appendChild(btn);
   }
   app.appendChild(grid);
+  const wrap = document.createElement('div');
+  wrap.className = 'all-wrap';
+  wrap.innerHTML = `<button class="tool-btn all-btn">${icon('camera')} All characters</button>`;
+  wrap.querySelector('button').onclick = openChart;
+  app.appendChild(wrap);
 }
 
 /* ---------- SETTINGS SCREEN ---------- */
