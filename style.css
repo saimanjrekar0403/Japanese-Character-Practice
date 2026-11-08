@@ -230,3 +230,27 @@ h1 { margin: 0; font-size: 20px; }
   vector-effect: non-scaling-stroke;
 }
 @media (min-width: 701px) { .shot-box { width: 112px; height: 112px; } }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal {
+  width: min(92vw, 380px);
+  background: var(--bg);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 20px;
+}
+.modal h2 { margin: 0 0 10px; font-size: 20px; }
+.modal p, .modal ol { margin: 0 0 16px; line-height: 1.5; }
+.modal ol { padding-left: 20px; }
+.modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.modal-actions .tool-btn { margin: 0; }

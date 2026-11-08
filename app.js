@@ -34,6 +34,103 @@ function applyTheme() {
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 applyTheme();
 
+/* ---------- INSTALL (first-open popup + settings button) ---------- */
+
+let deferredPrompt = null;   // Chrome gives us this when the app can be installed
+let installHook = null;      // the settings screen sets this so its install box updates itself
+
+const isStandalone = () =>
+  matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+const isIOS = () =>
+  /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);   // iPads that pretend to be Macs
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();          // hide Chrome's own mini-bar, we show our own popup
+  deferredPrompt = e;
+  maybeShowFirstOpenPopup();
+  if (installHook) installHook();
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  closeModal();
+  if (installHook) installHook();
+});
+
+async function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();           // Chrome's real install dialog
+  await deferredPrompt.userChoice;   // wait for the answer
+  deferredPrompt = null;             // an event can only be used once
+  if (installHook) installHook();
+}
+
+function closeModal() {
+  const m = document.querySelector('.modal-backdrop');
+  if (m) m.remove();
+}
+
+function showInstallPopup() {
+  if (isStandalone() || document.querySelector('.modal-backdrop')) return;
+  const canInstall = !!deferredPrompt;
+  if (!canInstall && !isIOS()) return;   // nothing we can offer in this browser
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2>Install this app</h2>
+      ${canInstall
+        ? `<p>Add it to your home screen so it opens like a normal app and works offline.</p>
+           <div class="modal-actions">
+             <button class="tool-btn" id="installYes">Install</button>
+             <button class="tool-btn" id="installNo">Not now</button>
+           </div>`
+        : `<ol>
+             <li>Open this page in <b>Safari</b></li>
+             <li>Tap the <b>Share</b> button</li>
+             <li>Tap <b>Add to Home Screen</b></li>
+           </ol>
+           <div class="modal-actions">
+             <button class="tool-btn" id="installNo">Got it</button>
+           </div>`}
+    </div>`;
+  document.body.appendChild(backdrop);
+
+  backdrop.onclick = e => { if (e.target === backdrop) closeModal(); };   // tap outside to close
+  document.getElementById('installNo').onclick = closeModal;
+  const yes = document.getElementById('installYes');
+  if (yes) yes.onclick = () => { closeModal(); installApp(); };
+}
+
+// shows the popup only the very first time, and only if installing is possible
+function maybeShowFirstOpenPopup() {
+  if (localStorage.getItem('installPopupSeen')) return;
+  if (isStandalone()) return;
+  if (!deferredPrompt && !isIOS()) return;
+  localStorage.setItem('installPopupSeen', '1');
+  showInstallPopup();
+}
+
+// the Install section inside the settings screen
+function renderInstall() {
+  const box = document.getElementById('installBox');
+  if (!box) return;   // not on the settings screen right now
+  if (isStandalone()) {
+    box.innerHTML = `<h2>Install</h2><p class="hint">This app is installed ✓</p>`;
+  } else if (deferredPrompt) {
+    box.innerHTML = `<h2>Install</h2><button class="theme-btn" id="installBtn">Install app</button>`;
+    document.getElementById('installBtn').onclick = installApp;
+  } else if (isIOS()) {
+    box.innerHTML = `<h2>Install</h2><button class="theme-btn" id="installBtn">How to install</button>`;
+    document.getElementById('installBtn').onclick = showInstallPopup;
+  } else {
+    box.innerHTML = `<h2>Install</h2><p class="hint">Open your browser's menu and choose "Install app" or "Add to Home screen".</p>`;
+  }
+}
+
 /* ---------- PROGRESS (saved on this phone, resets at 3 AM IST) ---------- */
 
 const RESET_HOUR = 3;   // change this later if you want a different reset time
@@ -130,9 +227,10 @@ function showSettings() {
         <button class="theme-btn" data-theme-choice="light">Light</button>
         <button class="theme-btn" data-theme-choice="dark">Dark</button>
       </div>
+      <div id="installBox"></div>
     </div>`;
 
-  const buttons = app.querySelectorAll('.theme-btn');
+  const buttons = app.querySelectorAll('.theme-btn[data-theme-choice]');
 
   function markSelected() {
     const pref = localStorage.getItem('theme') || 'auto';
@@ -147,6 +245,9 @@ function showSettings() {
     };
   });
   markSelected();
+
+  installHook = renderInstall;   // keeps the install box up to date
+  renderInstall();
 }
 
 /* ---------- PRACTICE SCREEN ---------- */
@@ -344,6 +445,7 @@ document.getElementById('homeBtn').onclick = () => { location.hash = '#/'; };
 settingsBtn.onclick = () => { location.hash = '#/settings'; };
 window.addEventListener('hashchange', route);
 route();
+setTimeout(maybeShowFirstOpenPopup, 800);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
