@@ -1,0 +1,30 @@
+{
+  "id": "za",
+  "chars": [
+    {
+      "kana": "ざ",
+      "romaji": "za",
+      "strokes": 5
+    },
+    {
+      "kana": "じ",
+      "romaji": "ji",
+      "strokes": 3
+    },
+    {
+      "kana": "ず",
+      "romaji": "zu",
+      "strokes": 4
+    },
+    {
+      "kana": "ぜ",
+      "romaji": "ze",
+      "strokes": 5
+    },
+    {
+      "kana": "ぞ",
+      "romaji": "zo",
+      "strokes": 3
+    }
+  ]
+}

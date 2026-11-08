@@ -1,0 +1,30 @@
+{
+  "id": "ha",
+  "chars": [
+    {
+      "kana": "は",
+      "romaji": "ha",
+      "strokes": 3
+    },
+    {
+      "kana": "ひ",
+      "romaji": "hi",
+      "strokes": 1
+    },
+    {
+      "kana": "ふ",
+      "romaji": "fu",
+      "strokes": 4
+    },
+    {
+      "kana": "へ",
+      "romaji": "he",
+      "strokes": 1
+    },
+    {
+      "kana": "ほ",
+      "romaji": "ho",
+      "strokes": 4
+    }
+  ]
+}

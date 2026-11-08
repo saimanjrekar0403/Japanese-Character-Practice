@@ -1,0 +1,30 @@
+{
+  "id": "ga",
+  "chars": [
+    {
+      "kana": "が",
+      "romaji": "ga",
+      "strokes": 5
+    },
+    {
+      "kana": "ぎ",
+      "romaji": "gi",
+      "strokes": 6
+    },
+    {
+      "kana": "ぐ",
+      "romaji": "gu",
+      "strokes": 3
+    },
+    {
+      "kana": "げ",
+      "romaji": "ge",
+      "strokes": 5
+    },
+    {
+      "kana": "ご",
+      "romaji": "go",
+      "strokes": 4
+    }
+  ]
+}

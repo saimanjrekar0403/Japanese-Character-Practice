@@ -1,0 +1,30 @@
+{
+  "id": "ta",
+  "chars": [
+    {
+      "kana": "た",
+      "romaji": "ta",
+      "strokes": 4
+    },
+    {
+      "kana": "ち",
+      "romaji": "chi",
+      "strokes": 2
+    },
+    {
+      "kana": "つ",
+      "romaji": "tsu",
+      "strokes": 1
+    },
+    {
+      "kana": "て",
+      "romaji": "te",
+      "strokes": 1
+    },
+    {
+      "kana": "と",
+      "romaji": "to",
+      "strokes": 2
+    }
+  ]
+}

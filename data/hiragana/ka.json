@@ -1,0 +1,30 @@
+{
+  "id": "ka",
+  "chars": [
+    {
+      "kana": "か",
+      "romaji": "ka",
+      "strokes": 3
+    },
+    {
+      "kana": "き",
+      "romaji": "ki",
+      "strokes": 4
+    },
+    {
+      "kana": "く",
+      "romaji": "ku",
+      "strokes": 1
+    },
+    {
+      "kana": "け",
+      "romaji": "ke",
+      "strokes": 3
+    },
+    {
+      "kana": "こ",
+      "romaji": "ko",
+      "strokes": 2
+    }
+  ]
+}

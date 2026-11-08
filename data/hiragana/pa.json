@@ -1,0 +1,30 @@
+{
+  "id": "pa",
+  "chars": [
+    {
+      "kana": "ぱ",
+      "romaji": "pa",
+      "strokes": 4
+    },
+    {
+      "kana": "ぴ",
+      "romaji": "pi",
+      "strokes": 2
+    },
+    {
+      "kana": "ぷ",
+      "romaji": "pu",
+      "strokes": 5
+    },
+    {
+      "kana": "ぺ",
+      "romaji": "pe",
+      "strokes": 2
+    },
+    {
+      "kana": "ぽ",
+      "romaji": "po",
+      "strokes": 5
+    }
+  ]
+}

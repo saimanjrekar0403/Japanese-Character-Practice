@@ -1,0 +1,30 @@
+{
+  "id": "sa",
+  "chars": [
+    {
+      "kana": "さ",
+      "romaji": "sa",
+      "strokes": 3
+    },
+    {
+      "kana": "し",
+      "romaji": "shi",
+      "strokes": 1
+    },
+    {
+      "kana": "す",
+      "romaji": "su",
+      "strokes": 2
+    },
+    {
+      "kana": "せ",
+      "romaji": "se",
+      "strokes": 3
+    },
+    {
+      "kana": "そ",
+      "romaji": "so",
+      "strokes": 1
+    }
+  ]
+}
