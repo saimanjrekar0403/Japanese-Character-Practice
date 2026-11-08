@@ -344,3 +344,7 @@ document.getElementById('homeBtn').onclick = () => { location.hash = '#/'; };
 settingsBtn.onclick = () => { location.hash = '#/settings'; };
 window.addEventListener('hashchange', route);
 route();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+}
